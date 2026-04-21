@@ -1,0 +1,2233 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>简历模版编辑器</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --app-bg: #f2f4f8;
+            --panel-bg: rgba(255, 255, 255, 0.86);
+            --panel-border: rgba(15, 23, 42, 0.08);
+            --paper-shadow: 0 24px 60px rgba(15, 23, 42, 0.14);
+            --resume-accent: #c53b3b;
+            --resume-ink: #202124;
+            --resume-muted: #666;
+            --resume-grid: rgba(197, 59, 59, 0.08);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+            background:
+                radial-gradient(circle at top left, rgba(197, 59, 59, 0.08), transparent 18%),
+                radial-gradient(circle at bottom right, rgba(37, 99, 235, 0.06), transparent 18%),
+                linear-gradient(180deg, #f8fafc 0%, var(--app-bg) 100%);
+            color: #0f172a;
+        }
+
+        input,
+        textarea,
+        select,
+        button {
+            font: inherit;
+        }
+
+        .glass-panel {
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            box-shadow: 0 16px 40px rgba(15, 23, 42, 0.06);
+        }
+
+        .field-label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            color: #475569;
+        }
+
+        .field-input,
+        .field-textarea,
+        .field-select {
+            width: 100%;
+            border-radius: 14px;
+            border: 1px solid rgba(148, 163, 184, 0.3);
+            background: rgba(255, 255, 255, 0.92);
+            color: #0f172a;
+            padding: 10px 12px;
+            outline: none;
+            transition: border-color 0.18s ease, box-shadow 0.18s ease;
+        }
+
+        .field-input:focus,
+        .field-textarea:focus,
+        .field-select:focus {
+            border-color: rgba(197, 59, 59, 0.58);
+            box-shadow: 0 0 0 4px rgba(197, 59, 59, 0.09);
+        }
+
+        .field-textarea {
+            min-height: 120px;
+            resize: vertical;
+            line-height: 1.55;
+        }
+
+        .field-textarea--medium {
+            min-height: 210px;
+        }
+
+        .field-textarea--large {
+            min-height: 360px;
+        }
+
+        .field-range {
+            width: 100%;
+            accent-color: var(--resume-accent);
+        }
+
+        .action-btn {
+            border-radius: 999px;
+            padding: 10px 16px;
+            border: 1px solid rgba(148, 163, 184, 0.24);
+            background: white;
+            color: #0f172a;
+            font-size: 13px;
+            font-weight: 700;
+            transition: transform 0.16s ease, box-shadow 0.16s ease, background-color 0.16s ease;
+        }
+
+        .action-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 10px 20px rgba(15, 23, 42, 0.06);
+        }
+
+        .action-btn.primary {
+            background: linear-gradient(135deg, #c53b3b 0%, #d95959 100%);
+            color: white;
+            border-color: rgba(197, 59, 59, 0.9);
+        }
+
+        .chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 10px;
+            border-radius: 999px;
+            background: rgba(197, 59, 59, 0.08);
+            color: #8f2c2c;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .resume-stage {
+            position: sticky;
+            top: 24px;
+            width: fit-content;
+        }
+
+        .resume-paper {
+            position: relative;
+            width: 210mm;
+            height: 297mm;
+            padding: 6mm 6.5mm 7mm;
+            background: white;
+            box-shadow: var(--paper-shadow);
+            border: 1px solid rgba(15, 23, 42, 0.08);
+            color: var(--resume-ink);
+            overflow: hidden;
+            break-inside: avoid-page;
+            page-break-inside: avoid;
+        }
+
+        .print-clone-host {
+            display: none;
+        }
+
+        .resume-toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+
+        .format-btn {
+            border-radius: 999px;
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            background: rgba(255, 255, 255, 0.9);
+            color: #334155;
+            font-size: 13px;
+            font-weight: 700;
+            padding: 8px 14px;
+            transition: transform 0.16s ease, box-shadow 0.16s ease;
+        }
+
+        .format-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
+        }
+
+        .resume-editable {
+            border-radius: 4px;
+            transition: background-color 0.16s ease, box-shadow 0.16s ease;
+        }
+
+        .resume-editable:hover {
+            background: rgba(197, 59, 59, 0.04);
+        }
+
+        .resume-editable:focus {
+            outline: none;
+            background: rgba(197, 59, 59, 0.06);
+            box-shadow: 0 0 0 2px rgba(197, 59, 59, 0.18);
+        }
+
+        .resume-paper::before,
+        .resume-paper::after {
+            content: "";
+            position: absolute;
+            border: 1px solid rgba(148, 163, 184, 0.14);
+            width: 190px;
+            height: 190px;
+            transform: rotate(45deg);
+            pointer-events: none;
+        }
+
+        .resume-paper::before {
+            top: -96px;
+            right: 58px;
+        }
+
+        .resume-paper::after {
+            top: -74px;
+            right: 148px;
+        }
+
+        .resume-name {
+            font-weight: 800;
+            line-height: 1.1;
+            letter-spacing: 0.02em;
+        }
+
+        .resume-header-line,
+        .resume-meta-line {
+            text-align: center;
+        }
+
+        .resume-section {
+            margin-top: 12px;
+        }
+
+        .resume-section-title {
+            display: block;
+            color: var(--resume-accent);
+            font-weight: 800;
+            margin-bottom: 4px;
+        }
+
+        .resume-rule {
+            height: 1px;
+            background: rgba(197, 59, 59, 0.55);
+            margin-bottom: 5px;
+        }
+
+        .resume-edu-table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+        }
+
+        .resume-edu-table td {
+            padding: 1px 4px 1px 0;
+            vertical-align: top;
+            line-height: 1.35;
+            word-break: break-word;
+        }
+
+        .resume-edu-table td.edu-compact {
+            white-space: nowrap;
+            word-break: keep-all;
+        }
+
+        .resume-edu-table td.edu-wide {
+            padding-top: 4px;
+            white-space: normal;
+            word-break: break-word;
+        }
+
+        .resume-entry + .resume-entry {
+            margin-top: 6px;
+        }
+
+        .resume-entry-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 16px;
+            font-weight: 700;
+            line-height: 1.35;
+        }
+
+        .resume-entry-sub {
+            color: #111827;
+        }
+
+        .resume-entry-date {
+            flex-shrink: 0;
+            white-space: nowrap;
+            text-align: right;
+        }
+
+        .resume-entry ul {
+            margin: 3px 0 0;
+            padding-left: 0;
+            list-style: none;
+        }
+
+        .resume-entry li {
+            position: relative;
+            margin: 1px 0;
+            padding-left: 14px;
+            line-height: 1.45;
+        }
+
+        .resume-entry li::before {
+            content: "•";
+            position: absolute;
+            left: 0;
+            top: 0;
+            color: var(--resume-ink);
+            font-weight: 700;
+        }
+
+        .resume-entry li.justify {
+            text-align: justify;
+            text-justify: inter-ideograph;
+        }
+
+        .resume-photo {
+            width: 82px;
+            height: 108px;
+            border: 1px solid rgba(15, 23, 42, 0.12);
+            object-fit: cover;
+            background:
+                linear-gradient(180deg, rgba(248, 250, 252, 0.8), rgba(226, 232, 240, 0.86));
+        }
+
+        .photo-placeholder {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #94a3b8;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .muted-note {
+            font-size: 12px;
+            color: #64748b;
+            line-height: 1.6;
+        }
+
+        .editor-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(520px, 580px);
+            gap: 24px;
+        }
+
+        .control-card {
+            border-radius: 24px;
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            background: rgba(255, 255, 255, 0.55);
+            padding: 16px;
+        }
+
+        .control-card + .control-card {
+            margin-top: 14px;
+        }
+
+        .status-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 700;
+            background: rgba(15, 23, 42, 0.05);
+            color: #334155;
+        }
+
+        .status-pill.is-success {
+            background: rgba(16, 185, 129, 0.12);
+            color: #047857;
+        }
+
+        .status-pill.is-warning {
+            background: rgba(245, 158, 11, 0.14);
+            color: #b45309;
+        }
+
+        .hero-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            min-width: min(100%, 520px);
+        }
+
+        .top-controls-panel.is-collapsed {
+            padding-top: 16px;
+            padding-bottom: 16px;
+        }
+
+        .top-panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 14px;
+        }
+
+        .top-panel-body {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .top-collapse-btn {
+            flex-shrink: 0;
+        }
+
+        .top-identity {
+            flex: 1;
+            min-width: 0;
+            max-width: 560px;
+        }
+
+        .top-utility-card {
+            border-radius: 24px;
+            border: 1px solid rgba(148, 163, 184, 0.18);
+            background: rgba(255, 255, 255, 0.62);
+            padding: 16px;
+        }
+
+        .top-utility-card .subheading {
+            margin-bottom: 12px;
+        }
+
+        .top-layout-bar {
+            margin-top: 16px;
+            border-radius: 24px;
+            border: 1px solid rgba(148, 163, 184, 0.18);
+            background: rgba(255, 255, 255, 0.62);
+            padding: 16px;
+        }
+
+        .top-layout-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 12px 16px;
+            align-items: end;
+        }
+
+        .top-layout-toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-height: 100%;
+            padding-top: 24px;
+        }
+
+        .editor-sidebar {
+            position: sticky;
+            top: 24px;
+            align-self: start;
+            max-height: calc(100vh - 48px);
+            overflow: auto;
+        }
+
+        .editor-sidebar::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        .editor-sidebar::-webkit-scrollbar-thumb {
+            background: rgba(148, 163, 184, 0.32);
+            border-radius: 999px;
+        }
+
+        .panel-switcher {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 8px;
+        }
+
+        .panel-switcher-btn {
+            border: 1px solid rgba(148, 163, 184, 0.18);
+            background: rgba(255, 255, 255, 0.7);
+            color: #475569;
+            border-radius: 14px;
+            padding: 10px 12px;
+            font-size: 12px;
+            font-weight: 700;
+            line-height: 1.2;
+            transition: background-color 0.16s ease, color 0.16s ease, border-color 0.16s ease, transform 0.16s ease;
+        }
+
+        .panel-switcher-btn:hover {
+            transform: translateY(-1px);
+            background: rgba(255, 255, 255, 0.92);
+        }
+
+        .panel-switcher-btn.is-active {
+            background: rgba(197, 59, 59, 0.1);
+            color: #8f2c2c;
+            border-color: rgba(197, 59, 59, 0.32);
+        }
+
+        .editor-panel {
+            display: none;
+        }
+
+        .editor-panel.is-active {
+            display: block;
+        }
+
+        .subheading {
+            margin: 0 0 10px;
+            font-size: 15px;
+            font-weight: 800;
+            color: #1e293b;
+        }
+
+        @media (max-width: 1400px) {
+            .editor-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .resume-stage {
+                position: static;
+                overflow: auto;
+            }
+
+            .editor-sidebar {
+                position: static;
+            }
+
+            .top-layout-grid {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 860px) {
+            .panel-switcher {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .top-panel-header {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .top-layout-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .top-layout-toggle {
+                padding-top: 0;
+            }
+        }
+
+        @media print {
+            @page {
+                size: A4 portrait;
+                margin: 0;
+            }
+
+            body {
+                background: white;
+                margin: 0;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            .editor-only {
+                display: none !important;
+            }
+
+            .editor-grid,
+            .resume-stage {
+                display: block;
+                margin: 0;
+                padding: 0;
+            }
+
+            .resume-paper {
+                box-shadow: none;
+                border: none;
+                margin: 0;
+                width: 210mm;
+                height: 297mm;
+                min-height: 297mm;
+                max-height: 297mm;
+                overflow: hidden;
+            }
+
+            body.print-mode main {
+                display: none !important;
+            }
+
+            body.print-mode .print-clone-host {
+                display: block !important;
+            }
+
+            body.print-mode .print-clone-host .resume-paper {
+                box-shadow: none;
+                border: none;
+                margin: 0;
+                width: 210mm;
+                height: 297mm;
+                min-height: 297mm;
+                max-height: 297mm;
+                overflow: hidden;
+            }
+
+            body.print-mode .print-clone-host .resume-editable {
+                background: transparent !important;
+                box-shadow: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main class="max-w-[1600px] mx-auto px-4 py-6 md:px-6 md:py-8">
+        <section id="topControlsSection" class="glass-panel rounded-[32px] p-5 md:p-6 editor-only top-controls-panel">
+            <div class="top-panel-header">
+                <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900">二进制思考</h1>
+                <button id="topCollapseBtn" class="action-btn top-collapse-btn" type="button" aria-expanded="true">收起顶部</button>
+            </div>
+            <div id="topControlsBody" class="top-panel-body">
+                <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                    <div class="top-identity">
+                        <div class="top-utility-card">
+                            <h3 class="subheading">存储与预设</h3>
+                            <div class="space-y-3">
+                                <div>
+                                    <label class="field-label" for="presetSelect">已保存预设</label>
+                                    <select id="presetSelect" class="field-select">
+                                        <option value="">选择一个预设</option>
+                                    </select>
+                                </div>
+                                <div class="flex flex-wrap gap-2">
+                                    <button id="savePresetBtn" class="action-btn">保存为预设</button>
+                                    <button id="deletePresetBtn" class="action-btn">删除预设</button>
+                                </div>
+                                <input id="importJsonInput" type="file" accept="application/json" class="hidden">
+                                <p class="muted-note">保存预设时会弹窗输入名称，选择下拉项后会自动加载对应内容。</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="hero-actions">
+                        <div class="status-row">
+                            <span id="draftStateBadge" class="status-pill is-success">自动保存已开启</span>
+                            <span id="presetCountBadge" class="status-pill">0 个预设</span>
+                        </div>
+                        <p id="storageStatus" class="muted-note">改右侧内容，左侧简历会实时刷新。</p>
+                        <p id="activePresetStatus" class="muted-note">当前未选择预设。</p>
+                        <div class="flex flex-wrap gap-2">
+                            <button id="saveBtn" class="action-btn">保存草稿</button>
+                            <button id="printBtn" class="action-btn primary">打印 / 导出 PDF</button>
+                            <button id="exportJsonBtn" class="action-btn">导出 JSON</button>
+                            <button id="importJsonBtn" class="action-btn">导入 JSON</button>
+                            <button id="resetBtn" class="action-btn">恢复默认</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="top-layout-bar">
+                    <h3 class="subheading">全局排版</h3>
+                    <div class="top-layout-grid">
+                        <div>
+                            <label class="field-label" for="nameSize">姓名字号</label>
+                            <input id="nameSize" class="field-range" type="range" min="24" max="40" step="1" value="31">
+                        </div>
+                        <div>
+                            <label class="field-label" for="metaSize">基本信息字号</label>
+                            <input id="metaSize" class="field-range" type="range" min="10" max="18" step="1" value="12">
+                        </div>
+                        <div>
+                            <label class="field-label" for="sectionTitleSize">分区标题字号</label>
+                            <input id="sectionTitleSize" class="field-range" type="range" min="12" max="22" step="1" value="14">
+                        </div>
+                        <div>
+                            <label class="field-label" for="bodySize">正文字号</label>
+                            <input id="bodySize" class="field-range" type="range" min="10" max="18" step="1" value="12">
+                        </div>
+                        <div>
+                            <label class="field-label" for="lineHeight">正文行距</label>
+                            <input id="lineHeight" class="field-range" type="range" min="1.2" max="1.9" step="0.05" value="1.45">
+                        </div>
+                        <div>
+                            <label class="field-label" for="sectionGap">分区间距</label>
+                            <input id="sectionGap" class="field-range" type="range" min="8" max="22" step="1" value="12">
+                        </div>
+                        <div>
+                            <label class="field-label" for="topSectionGap">顶部到教育背景间距</label>
+                            <input id="topSectionGap" class="field-range" type="range" min="6" max="28" step="1" value="12">
+                        </div>
+                        <div class="top-layout-toggle">
+                            <input id="justifyToggle" type="checkbox" checked>
+                            <label for="justifyToggle" class="text-sm font-semibold text-slate-700">正文两端对齐</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="editor-grid mt-6">
+            <div class="resume-stage">
+                <div class="resume-toolbar editor-only">
+                    <button class="format-btn" data-command="bold">加粗</button>
+                    <button class="format-btn" data-command="insertUnorderedList">项目符号</button>
+                    <button class="format-btn" data-command="removeFormat">清除格式</button>
+                    <span class="muted-note">点击纸面文字可直接改，选中文字后点按钮即可套格式。</span>
+                </div>
+                <div class="resume-paper" id="resumePaper">
+                    <div class="flex justify-between items-start gap-4">
+                        <div class="flex-1 min-w-0">
+                            <div class="resume-header-line">
+                                <div id="previewName" class="resume-name resume-editable" contenteditable="true" data-bind-input="nameInput" data-rich-key="name"></div>
+                            </div>
+                            <div id="previewContact1" class="resume-meta-line mt-1 resume-editable" contenteditable="true" data-bind-input="contactLine1Input" data-rich-key="contactLine1"></div>
+                            <div id="previewContact2" class="resume-meta-line mt-[2px] resume-editable" contenteditable="true" data-bind-input="contactLine2Input" data-rich-key="contactLine2"></div>
+                            <div id="previewSummary" class="resume-meta-line mt-[3px] resume-editable" contenteditable="true" data-bind-input="summaryInput" data-rich-key="summary"></div>
+                        </div>
+                        <div class="flex-shrink-0">
+                            <img id="previewPhoto" class="resume-photo hidden" alt="简历照片">
+                            <div id="previewPhotoPlaceholder" class="resume-photo photo-placeholder">证件照</div>
+                        </div>
+                    </div>
+
+                    <div id="resumeSections"></div>
+                </div>
+            </div>
+
+            <aside class="glass-panel rounded-[32px] p-5 md:p-6 editor-only editor-sidebar">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-900">编辑面板</h2>
+                        <p class="muted-note mt-1">顶部固定放常用工具，这里专注切换和编辑具体内容，长内容字段已加大，适合连续改实习和项目经历。</p>
+                    </div>
+                </div>
+
+                <div class="control-card mt-4">
+                    <h3 class="subheading">内容切换</h3>
+                    <div class="panel-switcher">
+                        <button class="panel-switcher-btn is-active" data-panel-target="profile">顶部</button>
+                        <div id="dynamicPanelTabs" class="contents"></div>
+                    </div>
+                    <div class="mt-3">
+                        <button id="addSectionBtn" class="action-btn">新增部分</button>
+                    </div>
+                </div>
+
+                <div class="control-card editor-panel is-active" data-editor-panel="profile">
+                    <h3 class="subheading">顶部信息</h3>
+                    <div class="space-y-3">
+                        <div>
+                            <label class="field-label" for="nameInput">姓名</label>
+                            <input id="nameInput" class="field-input" type="text">
+                        </div>
+                        <div>
+                            <label class="field-label" for="contactLine1Input">联系人 / 邮箱</label>
+                            <input id="contactLine1Input" class="field-input" type="text">
+                        </div>
+                        <div>
+                            <label class="field-label" for="contactLine2Input">年龄 / 城市等</label>
+                            <input id="contactLine2Input" class="field-input" type="text">
+                        </div>
+                        <div>
+                            <label class="field-label" for="summaryInput">求职意向摘要</label>
+                            <input id="summaryInput" class="field-input" type="text">
+                        </div>
+                        <div>
+                            <label class="field-label" for="photoInput">证件照</label>
+                            <input id="photoInput" class="field-input" type="file" accept="image/*">
+                        </div>
+                    </div>
+                </div>
+                <div id="dynamicSectionPanels"></div>
+            </aside>
+        </section>
+    </main>
+    <div id="printCloneHost" class="print-clone-host" aria-hidden="true"></div>
+
+    <script>
+        const STORAGE_KEY = 'resume-template-editor-storage-v2';
+        const STORAGE_BACKUP_KEY = 'resume-template-editor-storage-v2-backup';
+        const LEGACY_STORAGE_KEY = 'resume-template-editor-state-v1';
+        const UI_PANEL_KEY = 'resume-template-editor-ui-panel-v1';
+        const TOP_PANEL_KEY = 'resume-template-editor-top-panel-v1';
+        const STORAGE_VERSION = 2;
+        const DEFAULT_PRESET_NAME = '二进制思考默认模版';
+
+        function createSectionId() {
+            return `section-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+        }
+
+        function createDefaultSections() {
+            return [
+                {
+                    id: 'section-education',
+                    title: '教育背景',
+                    kind: 'education',
+                    content: [
+                        '某双一流大学 | 985 / 双一流 | 计算机科学与技术 | 硕士 | GPA 3.90（前10%） | 2023年09月–2026年06月',
+                        '某重点本科院校 | 省级一流专业 | 软件工程 | 本科 | GPA 3.82（前5%） | 2019年09月–2023年06月',
+                        '累计获得国家奖学金、学业一等奖学金、科研竞赛奖励等 6 次，CET-6，优秀毕业生等 |  |  |  |  | '
+                    ].join('\n'),
+                    titleHtml: '',
+                    contentHtml: ''
+                },
+                {
+                    id: 'section-internships',
+                    title: '实习经历',
+                    kind: 'entries',
+                    content: [
+                        '基于企业知识库的智能问答系统 | 某 AI 实验室&业务平台团队 | 2025年07月–2025年12月',
+                        '面向复杂业务文档检索、长链路问答可信度不足与多轮上下文易丢失的问题，参与搭建企业级 RAG 问答系统并推进线上场景落地。',
+                        '基于 LangGraph + 向量数据库 + 重排序组件设计混合检索链路，支持意图拆解、证据召回、答案生成与结果校验的多阶段执行。',
+                        '构建短期会话记忆与长期用户画像协同机制，缓解传统滑动窗口遗忘问题，提升多轮问答连续性与上下文一致性。',
+                        '搭建离线评测与 badcase 回归闭环，沉淀检索、生成、安全三类核心指标，支持版本对比、问题归因与定向优化。',
+                        '',
+                        '多智能体内容生产平台 | 某研究院&AIGC 产品团队 | 2024年10月–2025年03月',
+                        '针对创意拆解链路不稳定、角色设定难统一、多角色协作效率低的问题，参与设计并实现面向内容生产场景的多智能体编排平台。',
+                        '将导演、编剧、美术、角色、场景、分镜等节点拆分为标准化执行阶段，并通过状态机驱动流程推进、返工与收敛。',
+                        '设计共享记忆、节点记忆与交接记忆协同策略，保障多轮修改下的设定一致性、资产可追踪性与任务可回放能力。',
+                        '搭建模型路由与失败恢复机制，支持节点级重试、错误隔离与 key pool 兜底，提升平台在高并发下的稳定性。'
+                    ].join('\n'),
+                    titleHtml: '',
+                    contentHtml: ''
+                },
+                {
+                    id: 'section-projects',
+                    title: '项目经历',
+                    kind: 'entries',
+                    content: [
+                        '技术知识中台 / 文档编译系统 | GitHub / 在线演示链接 | 2025年01月–至今',
+                        '设计并实现 Raw → Schema → Wiki 的知识编译流程，支持文档上传、解析、结构化构建、图谱关联与页面展示。',
+                        '重构知识构建链路为候选解析、规范化校验、质量门控制与编译写入四阶段，降低脏数据落库与知识库污染风险。',
+                        '围绕关系抽取、实体对齐与知识回滚设计系统工程兜底策略，提升复杂文档场景下的构建稳定性与可维护性。'
+                    ].join('\n'),
+                    titleHtml: '',
+                    contentHtml: ''
+                },
+                {
+                    id: 'section-campus',
+                    title: '校园经历',
+                    kind: 'entries',
+                    content: '科研竞赛与学生工作 | 数学建模 / 技术分享 / 开源社区 | 省级以上奖项 10+ 项',
+                    titleHtml: '',
+                    contentHtml: ''
+                },
+                {
+                    id: 'section-skills',
+                    title: '专业技能',
+                    kind: 'skills',
+                    content: [
+                        'LLM / AI Infra | RAG、Agent、LangChain、LangGraph、Prompt Engineering、Evaluation、ComfyUI',
+                        'Backend & Frontend | Python、Linux、Git、Vue3、React、TypeScript、MySQL、Redis、Docker',
+                        '工程能力 | 具备从 0 到 1 的独立开发经验，能够完成需求拆解、方案设计、实现落地与质量迭代'
+                    ].join('\n'),
+                    titleHtml: '',
+                    contentHtml: ''
+                }
+            ];
+        }
+
+        function createBinaryThinkingTemplateState() {
+            return {
+                name: '候选人姓名',
+                contactLine1: '手机号（微信同） | your@email.com',
+                contactLine2: '城市 | 年龄 | 学历 / 专业方向',
+                summary: '到岗时间 | 目标岗位（算法 / 后端 / AI 产品 / Agent 开发）',
+                photo: '',
+                nameSize: 26,
+                metaSize: 13,
+                sectionTitleSize: 16,
+                bodySize: 13,
+                lineHeight: 1.2,
+                sectionGap: 8,
+                topSectionGap: 6,
+                justify: true,
+                sections: createDefaultSections(),
+                topRichState: {}
+            };
+        }
+
+        const DEFAULT_STATE = createBinaryThinkingTemplateState();
+        const BUILT_IN_PRESETS = {
+            [DEFAULT_PRESET_NAME]: createBinaryThinkingTemplateState()
+        };
+
+        const els = {
+            topControlsSection: document.getElementById('topControlsSection'),
+            topControlsBody: document.getElementById('topControlsBody'),
+            topCollapseBtn: document.getElementById('topCollapseBtn'),
+            nameInput: document.getElementById('nameInput'),
+            contactLine1Input: document.getElementById('contactLine1Input'),
+            contactLine2Input: document.getElementById('contactLine2Input'),
+            summaryInput: document.getElementById('summaryInput'),
+            photoInput: document.getElementById('photoInput'),
+            nameSize: document.getElementById('nameSize'),
+            metaSize: document.getElementById('metaSize'),
+            sectionTitleSize: document.getElementById('sectionTitleSize'),
+            bodySize: document.getElementById('bodySize'),
+            lineHeight: document.getElementById('lineHeight'),
+            sectionGap: document.getElementById('sectionGap'),
+            topSectionGap: document.getElementById('topSectionGap'),
+            justifyToggle: document.getElementById('justifyToggle'),
+            previewName: document.getElementById('previewName'),
+            previewContact1: document.getElementById('previewContact1'),
+            previewContact2: document.getElementById('previewContact2'),
+            previewSummary: document.getElementById('previewSummary'),
+            previewPhoto: document.getElementById('previewPhoto'),
+            previewPhotoPlaceholder: document.getElementById('previewPhotoPlaceholder'),
+            resumePaper: document.getElementById('resumePaper'),
+            resumeSections: document.getElementById('resumeSections'),
+            dynamicPanelTabs: document.getElementById('dynamicPanelTabs'),
+            dynamicSectionPanels: document.getElementById('dynamicSectionPanels'),
+            addSectionBtn: document.getElementById('addSectionBtn'),
+            printCloneHost: document.getElementById('printCloneHost'),
+            storageStatus: document.getElementById('storageStatus'),
+            activePresetStatus: document.getElementById('activePresetStatus'),
+            draftStateBadge: document.getElementById('draftStateBadge'),
+            presetCountBadge: document.getElementById('presetCountBadge'),
+            presetSelect: document.getElementById('presetSelect'),
+            savePresetBtn: document.getElementById('savePresetBtn'),
+            deletePresetBtn: document.getElementById('deletePresetBtn'),
+            exportJsonBtn: document.getElementById('exportJsonBtn'),
+            importJsonBtn: document.getElementById('importJsonBtn'),
+            importJsonInput: document.getElementById('importJsonInput'),
+            saveBtn: document.getElementById('saveBtn'),
+            printBtn: document.getElementById('printBtn'),
+            resetBtn: document.getElementById('resetBtn')
+        };
+
+        let photoDataUrl = '';
+        let autosaveTimer = null;
+        let suppressAutosave = false;
+        let isDirty = false;
+        let activeEditorPanel = 'profile';
+        let topRichState = {};
+        let sectionsState = [];
+
+        function cloneValue(value) {
+            return JSON.parse(JSON.stringify(value));
+        }
+
+        function createEmptyStorage() {
+            return {
+                version: STORAGE_VERSION,
+                updatedAt: '',
+                activePreset: '',
+                draft: null,
+                presets: {}
+            };
+        }
+
+        let storageData = createEmptyStorage();
+
+        function isBuiltInPreset(name) {
+            return Boolean(name && Object.prototype.hasOwnProperty.call(BUILT_IN_PRESETS, name));
+        }
+
+        function getPresetSnapshot(name) {
+            if (!name) return null;
+            if (isBuiltInPreset(name)) return BUILT_IN_PRESETS[name];
+            return storageData.presets[name] || null;
+        }
+
+        function parseLineBlocks(text) {
+            return String(text || '')
+                .trim()
+                .split(/\n\s*\n/)
+                .map((block) => block.split('\n').map((line) => line.trim()).filter(Boolean))
+                .filter((block) => block.length);
+        }
+
+        function parseEducation(text) {
+            return String(text || '')
+                .split('\n')
+                .map((line) => line.trim())
+                .filter(Boolean)
+                .map((line) => {
+                    const cols = line.split('|').map((part) => part.trim());
+                    while (cols.length < 6) cols.push('');
+                    return cols.slice(0, 6);
+                });
+        }
+
+        function parseEntries(text) {
+            return parseLineBlocks(text).map((block) => {
+                const [headerLine = '', ...bulletLines] = block;
+                const header = headerLine.split('|').map((part) => part.trim());
+                return {
+                    title: header[0] || '',
+                    subtitle: header[1] || '',
+                    date: header[2] || '',
+                    bullets: bulletLines.filter(Boolean)
+                };
+            });
+        }
+
+        function parseSkills(text) {
+            return String(text || '')
+                .split('\n')
+                .map((line) => line.trim())
+                .filter(Boolean)
+                .map((line) => {
+                    const parts = line.split('|').map((part) => part.trim());
+                    return {
+                        label: parts[0] || '',
+                        content: parts[1] || ''
+                    };
+                });
+        }
+
+        function getSectionKindLabel(kind) {
+            return kind === 'education' ? '教育表格' : kind === 'skills' ? '技能列表' : '经历列表';
+        }
+
+        function getSectionHelpText(kind) {
+            if (kind === 'education') {
+                return '每行格式：学校 | 状态 | 专业 | 学位 | 成绩 | 时间';
+            }
+            if (kind === 'skills') {
+                return '每行格式：分类 | 内容';
+            }
+            return '每段第一行：标题 | 副标题 | 时间；后续每行一个要点；空行分隔不同经历。';
+        }
+
+        function getSectionTextareaClass(kind) {
+            return kind === 'entries' ? 'field-textarea field-textarea--large' : 'field-textarea field-textarea--medium';
+        }
+
+        function normalizeSection(section, index = 0) {
+            const fallback = createDefaultSections()[Math.min(index, createDefaultSections().length - 1)] || createDefaultSections()[0];
+            return {
+                id: section.id || createSectionId(),
+                title: typeof section.title === 'string' ? section.title : fallback.title,
+                kind: ['education', 'entries', 'skills'].includes(section.kind) ? section.kind : 'entries',
+                content: typeof section.content === 'string' ? section.content : '',
+                titleHtml: typeof section.titleHtml === 'string' ? section.titleHtml : '',
+                contentHtml: typeof section.contentHtml === 'string' ? section.contentHtml : ''
+            };
+        }
+
+        function migrateLegacySections(state) {
+            const richState = state.richState || {};
+            return [
+                {
+                    id: 'section-education',
+                    title: '教育背景',
+                    kind: 'education',
+                    content: state.education ?? createDefaultSections()[0].content,
+                    titleHtml: '',
+                    contentHtml: richState.education || ''
+                },
+                {
+                    id: 'section-internships',
+                    title: '实习经历',
+                    kind: 'entries',
+                    content: state.internships ?? createDefaultSections()[1].content,
+                    titleHtml: '',
+                    contentHtml: richState.internships || ''
+                },
+                {
+                    id: 'section-projects',
+                    title: '项目经历',
+                    kind: 'entries',
+                    content: state.projects ?? createDefaultSections()[2].content,
+                    titleHtml: '',
+                    contentHtml: richState.projects || ''
+                },
+                {
+                    id: 'section-campus',
+                    title: '校园经历',
+                    kind: 'entries',
+                    content: state.campus ?? createDefaultSections()[3].content,
+                    titleHtml: '',
+                    contentHtml: richState.campus || ''
+                },
+                {
+                    id: 'section-skills',
+                    title: '专业技能',
+                    kind: 'skills',
+                    content: state.skills ?? createDefaultSections()[4].content,
+                    titleHtml: '',
+                    contentHtml: richState.skills || ''
+                }
+            ];
+        }
+
+        function normalizeSectionsFromState(state) {
+            if (Array.isArray(state.sections)) {
+                return state.sections.map((section, index) => normalizeSection(section, index));
+            }
+            return migrateLegacySections(state);
+        }
+
+        function getSectionById(sectionId) {
+            return sectionsState.find((section) => section.id === sectionId);
+        }
+
+        function getSectionBodyNode(sectionId) {
+            return els.resumeSections.querySelector(`[data-section-id="${sectionId}"] [data-role="section-body"]`);
+        }
+
+        function getSectionTitleNode(sectionId) {
+            return els.resumeSections.querySelector(`[data-section-id="${sectionId}"] [data-role="section-title"]`);
+        }
+
+        function getSectionPanelInput(sectionId) {
+            return els.dynamicSectionPanels.querySelector(`[data-section-input="${sectionId}"]`);
+        }
+
+        function getSectionPanelTitleInput(sectionId) {
+            return els.dynamicSectionPanels.querySelector(`[data-section-title-input="${sectionId}"]`);
+        }
+
+        function createNewSection(kind = 'entries', title = '新部分') {
+            return normalizeSection({
+                id: createSectionId(),
+                title,
+                kind,
+                content: '',
+                titleHtml: '',
+                contentHtml: ''
+            });
+        }
+
+        function applyDefaults() {
+            suppressAutosave = true;
+            els.nameInput.value = DEFAULT_STATE.name;
+            els.contactLine1Input.value = DEFAULT_STATE.contactLine1;
+            els.contactLine2Input.value = DEFAULT_STATE.contactLine2;
+            els.summaryInput.value = DEFAULT_STATE.summary;
+            els.nameSize.value = DEFAULT_STATE.nameSize;
+            els.metaSize.value = DEFAULT_STATE.metaSize;
+            els.sectionTitleSize.value = DEFAULT_STATE.sectionTitleSize;
+            els.bodySize.value = DEFAULT_STATE.bodySize;
+            els.lineHeight.value = DEFAULT_STATE.lineHeight;
+            els.sectionGap.value = DEFAULT_STATE.sectionGap;
+            els.topSectionGap.value = DEFAULT_STATE.topSectionGap;
+            els.justifyToggle.checked = DEFAULT_STATE.justify;
+            photoDataUrl = DEFAULT_STATE.photo;
+            els.photoInput.value = '';
+            topRichState = {};
+            sectionsState = cloneValue(DEFAULT_STATE.sections);
+            storageData.activePreset = DEFAULT_PRESET_NAME;
+            refreshPresetSelect();
+            fullRender();
+            suppressAutosave = false;
+        }
+
+        function getSerializableState() {
+            return {
+                name: els.nameInput.value,
+                contactLine1: els.contactLine1Input.value,
+                contactLine2: els.contactLine2Input.value,
+                summary: els.summaryInput.value,
+                photo: photoDataUrl,
+                nameSize: els.nameSize.value,
+                metaSize: els.metaSize.value,
+                sectionTitleSize: els.sectionTitleSize.value,
+                bodySize: els.bodySize.value,
+                lineHeight: els.lineHeight.value,
+                sectionGap: els.sectionGap.value,
+                topSectionGap: els.topSectionGap.value,
+                justify: els.justifyToggle.checked,
+                sections: cloneValue(sectionsState),
+                topRichState: cloneValue(topRichState)
+            };
+        }
+
+        function applySavedState(state) {
+            suppressAutosave = true;
+            els.nameInput.value = state.name ?? DEFAULT_STATE.name;
+            els.contactLine1Input.value = state.contactLine1 ?? DEFAULT_STATE.contactLine1;
+            els.contactLine2Input.value = state.contactLine2 ?? DEFAULT_STATE.contactLine2;
+            els.summaryInput.value = state.summary ?? DEFAULT_STATE.summary;
+            els.nameSize.value = state.nameSize ?? DEFAULT_STATE.nameSize;
+            els.metaSize.value = state.metaSize ?? DEFAULT_STATE.metaSize;
+            els.sectionTitleSize.value = state.sectionTitleSize ?? DEFAULT_STATE.sectionTitleSize;
+            els.bodySize.value = state.bodySize ?? DEFAULT_STATE.bodySize;
+            els.lineHeight.value = state.lineHeight ?? DEFAULT_STATE.lineHeight;
+            els.sectionGap.value = state.sectionGap ?? DEFAULT_STATE.sectionGap;
+            els.topSectionGap.value = state.topSectionGap ?? DEFAULT_STATE.topSectionGap;
+            els.justifyToggle.checked = state.justify ?? DEFAULT_STATE.justify;
+            photoDataUrl = state.photo ?? '';
+            els.photoInput.value = '';
+            topRichState = cloneValue(state.topRichState || state.richState?.top || {});
+            sectionsState = normalizeSectionsFromState(state);
+            fullRender();
+            suppressAutosave = false;
+        }
+
+        function formatTimeLabel(date = new Date()) {
+            return date.toLocaleTimeString('zh-CN', {
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        function setStorageStatus(text) {
+            els.storageStatus.textContent = text;
+        }
+
+        function setTopPanelCollapsed(collapsed) {
+            els.topControlsSection.classList.toggle('is-collapsed', collapsed);
+            els.topControlsBody.hidden = collapsed;
+            els.topCollapseBtn.textContent = collapsed ? '展开顶部' : '收起顶部';
+            els.topCollapseBtn.setAttribute('aria-expanded', String(!collapsed));
+            localStorage.setItem(TOP_PANEL_KEY, collapsed ? 'collapsed' : 'expanded');
+        }
+
+        function restoreTopPanelState() {
+            const savedState = localStorage.getItem(TOP_PANEL_KEY);
+            setTopPanelCollapsed(savedState === 'collapsed');
+        }
+
+        function setActiveEditorPanel(panelName) {
+            activeEditorPanel = panelName || 'profile';
+            document.querySelectorAll('[data-panel-target]').forEach((button) => {
+                button.classList.toggle('is-active', button.dataset.panelTarget === activeEditorPanel);
+            });
+            document.querySelectorAll('[data-editor-panel]').forEach((panel) => {
+                panel.classList.toggle('is-active', panel.dataset.editorPanel === activeEditorPanel);
+            });
+            localStorage.setItem(UI_PANEL_KEY, activeEditorPanel);
+        }
+
+        function restoreActiveEditorPanel() {
+            const savedPanel = localStorage.getItem(UI_PANEL_KEY) || 'profile';
+            const exists = savedPanel === 'profile' || sectionsState.some((section) => `section:${section.id}` === savedPanel);
+            setActiveEditorPanel(exists ? savedPanel : 'profile');
+        }
+
+        function updateDraftStateBadge() {
+            els.draftStateBadge.textContent = isDirty ? '有未同步修改' : '自动保存已开启';
+            els.draftStateBadge.classList.toggle('is-warning', isDirty);
+            els.draftStateBadge.classList.toggle('is-success', !isDirty);
+        }
+
+        function updateSaveButtonLabel(forceText = '') {
+            if (forceText) {
+                els.saveBtn.textContent = forceText;
+                return;
+            }
+            els.saveBtn.textContent = isDirty ? '保存草稿*' : '保存草稿';
+        }
+
+        function updatePresetStatus() {
+            const builtInCount = Object.keys(BUILT_IN_PRESETS).length;
+            const customCount = Object.keys(storageData.presets).length;
+            const activePreset = storageData.activePreset;
+            els.presetCountBadge.textContent = `内置 ${builtInCount} · 预设 ${customCount}`;
+            els.activePresetStatus.textContent = activePreset
+                ? `当前预设：${activePreset}`
+                : '当前未选择预设。';
+        }
+
+        function setDirty(nextDirty) {
+            isDirty = nextDirty;
+            updateDraftStateBadge();
+            updateSaveButtonLabel();
+        }
+
+        function persistStorage() {
+            const payload = JSON.stringify(storageData);
+            localStorage.setItem(STORAGE_KEY, payload);
+            localStorage.setItem(STORAGE_BACKUP_KEY, payload);
+        }
+
+        function migrateLegacyStorage(raw) {
+            const next = createEmptyStorage();
+            next.draft = raw;
+            next.updatedAt = new Date().toISOString();
+            return next;
+        }
+
+        function readStorageCandidate(key) {
+            try {
+                const raw = localStorage.getItem(key);
+                return raw ? JSON.parse(raw) : null;
+            } catch (error) {
+                return null;
+            }
+        }
+
+        function normalizeImportedStorage(raw) {
+            if (!raw || typeof raw !== 'object') return null;
+
+            if ('version' in raw && ('draft' in raw || 'presets' in raw)) {
+                return {
+                    version: STORAGE_VERSION,
+                    updatedAt: raw.updatedAt || '',
+                    activePreset: raw.activePreset || '',
+                    draft: raw.draft || null,
+                    presets: raw.presets && typeof raw.presets === 'object' ? raw.presets : {}
+                };
+            }
+
+            if ('name' in raw || 'education' in raw || 'sections' in raw || 'richState' in raw) {
+                return migrateLegacyStorage(raw);
+            }
+
+            return null;
+        }
+
+        function loadStorageData() {
+            const primary = normalizeImportedStorage(readStorageCandidate(STORAGE_KEY));
+            if (primary) return primary;
+
+            const backup = normalizeImportedStorage(readStorageCandidate(STORAGE_BACKUP_KEY));
+            if (backup) return backup;
+
+            const legacy = normalizeImportedStorage(readStorageCandidate(LEGACY_STORAGE_KEY));
+            if (legacy) {
+                storageData = legacy;
+                persistStorage();
+                localStorage.removeItem(LEGACY_STORAGE_KEY);
+                return storageData;
+            }
+
+            return createEmptyStorage();
+        }
+
+        function refreshPresetSelect() {
+            const builtInNames = Object.keys(BUILT_IN_PRESETS).sort((a, b) => a.localeCompare(b, 'zh-CN'));
+            const customNames = Object.keys(storageData.presets).sort((a, b) => a.localeCompare(b, 'zh-CN'));
+            const selected = storageData.activePreset || '';
+            els.presetSelect.innerHTML = '<option value="">选择一个预设</option>';
+
+            if (builtInNames.length) {
+                const builtInGroup = document.createElement('optgroup');
+                builtInGroup.label = '内置模版';
+                builtInNames.forEach((name) => {
+                    const option = document.createElement('option');
+                    option.value = name;
+                    option.textContent = name;
+                    if (name === selected) option.selected = true;
+                    builtInGroup.appendChild(option);
+                });
+                els.presetSelect.appendChild(builtInGroup);
+            }
+
+            if (customNames.length) {
+                const customGroup = document.createElement('optgroup');
+                customGroup.label = '我的预设';
+                customNames.forEach((name) => {
+                    const option = document.createElement('option');
+                    option.value = name;
+                    option.textContent = name;
+                    if (name === selected) option.selected = true;
+                    customGroup.appendChild(option);
+                });
+                els.presetSelect.appendChild(customGroup);
+            }
+
+            updatePresetStatus();
+        }
+
+        function getSavePresetPromptDefault() {
+            const currentName = storageData.activePreset || els.presetSelect.value || '';
+            if (isBuiltInPreset(currentName)) {
+                return `${currentName} 副本`;
+            }
+            return currentName;
+        }
+
+        function saveCurrentAsPreset() {
+            const presetName = window.prompt('请输入预设名称', getSavePresetPromptDefault());
+            const normalizedName = (presetName || '').trim();
+            if (!normalizedName) {
+                setStorageStatus('已取消保存预设。');
+                return;
+            }
+
+            if (isBuiltInPreset(normalizedName)) {
+                setStorageStatus(`“${normalizedName}”是内置模版名称，请换一个名字保存。`);
+                return;
+            }
+
+            if (storageData.presets[normalizedName] && !window.confirm(`预设“${normalizedName}”已存在，是否覆盖？`)) {
+                setStorageStatus('已取消覆盖已有预设。');
+                return;
+            }
+
+            storageData.presets[normalizedName] = cloneValue(getSerializableState());
+            storageData.activePreset = normalizedName;
+            persistStorage();
+            refreshPresetSelect();
+            saveDraft({ silent: true });
+            setStorageStatus(`预设“${normalizedName}”已保存。`);
+        }
+
+        function loadSelectedPreset() {
+            const presetName = els.presetSelect.value;
+            const presetState = getPresetSnapshot(presetName);
+            if (!presetName || !presetState) {
+                setStorageStatus('先选择一个可用的预设。');
+                return;
+            }
+
+            storageData.activePreset = presetName;
+            applySavedState(presetState);
+            persistStorage();
+            refreshPresetSelect();
+            saveDraft({ silent: true });
+            setStorageStatus(`已载入预设“${presetName}”。`);
+        }
+
+        function deleteSelectedPreset() {
+            const presetName = els.presetSelect.value;
+            if (!presetName) {
+                setStorageStatus('没有可删除的预设。');
+                return;
+            }
+
+            if (isBuiltInPreset(presetName)) {
+                setStorageStatus(`内置模版“${presetName}”不能删除。`);
+                return;
+            }
+
+            if (!storageData.presets[presetName]) {
+                setStorageStatus('没有可删除的预设。');
+                return;
+            }
+
+            if (!window.confirm(`确认删除预设“${presetName}”？此操作不会影响当前草稿。`)) {
+                setStorageStatus('已取消删除预设。');
+                return;
+            }
+
+            delete storageData.presets[presetName];
+            if (storageData.activePreset === presetName) {
+                storageData.activePreset = DEFAULT_PRESET_NAME;
+            }
+            persistStorage();
+            refreshPresetSelect();
+            setStorageStatus(`预设“${presetName}”已删除。`);
+        }
+        function saveDraft({ silent = false } = {}) {
+            storageData.version = STORAGE_VERSION;
+            storageData.updatedAt = new Date().toISOString();
+            storageData.draft = cloneValue(getSerializableState());
+            persistStorage();
+            setDirty(false);
+            if (!silent) {
+                updateSaveButtonLabel('已保存');
+                window.setTimeout(() => {
+                    updateSaveButtonLabel();
+                }, 1400);
+            }
+            setStorageStatus(`草稿已保存到当前浏览器 ${formatTimeLabel()}`);
+        }
+
+        function scheduleAutosave() {
+            if (suppressAutosave) return;
+            setDirty(true);
+            window.clearTimeout(autosaveTimer);
+            autosaveTimer = window.setTimeout(() => {
+                saveDraft({ silent: true });
+            }, 320);
+        }
+
+        function loadInitialState() {
+            storageData = loadStorageData();
+            refreshPresetSelect();
+
+            if (storageData.draft) {
+                applySavedState(storageData.draft);
+                setStorageStatus(`已恢复本地草稿 ${storageData.updatedAt ? formatTimeLabel(new Date(storageData.updatedAt)) : ''}`.trim());
+                setDirty(false);
+                return true;
+            }
+
+            setStorageStatus('已载入内置模版，可直接改成你自己的内容。');
+            setDirty(false);
+            return false;
+        }
+
+        function downloadJson(filename, payload) {
+            const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const anchor = document.createElement('a');
+            anchor.href = url;
+            anchor.download = filename;
+            document.body.appendChild(anchor);
+            anchor.click();
+            anchor.remove();
+            window.setTimeout(() => URL.revokeObjectURL(url), 0);
+        }
+
+        function exportStorageJson() {
+            saveDraft({ silent: true });
+            downloadJson(`resume-presets-${new Date().toISOString().slice(0, 10)}.json`, storageData);
+            setStorageStatus('已导出 JSON，可在其他浏览器导入。');
+        }
+
+        function importStorageJson(event) {
+            const file = event.target.files?.[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = () => {
+                try {
+                    const parsed = JSON.parse(String(reader.result || '{}'));
+                    const imported = normalizeImportedStorage(parsed);
+                    if (!imported) throw new Error('invalid');
+                    storageData = {
+                        version: STORAGE_VERSION,
+                        updatedAt: imported.updatedAt || new Date().toISOString(),
+                        activePreset: imported.activePreset || storageData.activePreset || '',
+                        draft: imported.draft || storageData.draft || null,
+                        presets: {
+                            ...storageData.presets,
+                            ...imported.presets
+                        }
+                    };
+                    persistStorage();
+                    refreshPresetSelect();
+                    if (storageData.draft) {
+                        applySavedState(storageData.draft);
+                    } else {
+                        applyDefaults();
+                    }
+                    saveDraft({ silent: true });
+                    setStorageStatus('已导入 JSON，当前草稿和预设都已恢复。');
+                } catch (error) {
+                    setStorageStatus('导入失败：文件不是可识别的简历预设 JSON。');
+                } finally {
+                    els.importJsonInput.value = '';
+                }
+            };
+            reader.readAsText(file, 'utf-8');
+        }
+
+        function setEditableContent(el, value, richKey) {
+            const richHtml = topRichState[richKey] || '';
+            el.innerHTML = richHtml || value || '';
+            el.style.display = value || richHtml ? '' : 'none';
+        }
+
+        function renderPhoto() {
+            if (photoDataUrl) {
+                els.previewPhoto.src = photoDataUrl;
+                els.previewPhoto.classList.remove('hidden');
+                els.previewPhotoPlaceholder.classList.add('hidden');
+            } else {
+                els.previewPhoto.classList.add('hidden');
+                els.previewPhotoPlaceholder.classList.remove('hidden');
+            }
+        }
+
+        function createEntriesNode(section, bodySize, lineHeight, justify) {
+            const container = document.createElement('div');
+            container.dataset.role = 'section-body';
+            container.dataset.sectionKind = 'entries';
+
+            if (section.contentHtml) {
+                container.innerHTML = section.contentHtml;
+            } else {
+                parseEntries(section.content).forEach((entry) => {
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'resume-entry';
+                    wrapper.style.fontSize = `${bodySize}px`;
+                    wrapper.style.lineHeight = lineHeight;
+
+                    const header = document.createElement('div');
+                    header.className = 'resume-entry-header';
+
+                    const left = document.createElement('div');
+                    left.className = 'flex-1 min-w-0';
+                    left.innerHTML = `
+                        <div class="resume-editable" contenteditable="true" data-role="entry-title">${entry.title || ''}</div>
+                        ${entry.subtitle ? `<div class="resume-entry-sub resume-editable" contenteditable="true" data-role="entry-subtitle">${entry.subtitle}</div>` : ''}
+                    `;
+
+                    const date = document.createElement('div');
+                    date.className = 'resume-entry-date resume-editable';
+                    date.contentEditable = 'true';
+                    date.dataset.role = 'entry-date';
+                    date.textContent = entry.date || '';
+
+                    header.appendChild(left);
+                    header.appendChild(date);
+                    wrapper.appendChild(header);
+
+                    if (entry.bullets.length) {
+                        const ul = document.createElement('ul');
+                        entry.bullets.forEach((bullet) => {
+                            const li = document.createElement('li');
+                            li.textContent = bullet;
+                            li.classList.add('resume-editable');
+                            li.contentEditable = 'true';
+                            li.dataset.role = 'entry-bullet';
+                            if (justify) li.classList.add('justify');
+                            ul.appendChild(li);
+                        });
+                        wrapper.appendChild(ul);
+                    }
+
+                    container.appendChild(wrapper);
+                });
+            }
+
+            container.querySelectorAll('.resume-entry').forEach((node) => {
+                node.style.fontSize = `${bodySize}px`;
+                node.style.lineHeight = lineHeight;
+            });
+            container.querySelectorAll('li').forEach((li) => {
+                li.classList.toggle('justify', justify);
+            });
+
+            return container;
+        }
+
+        function createSkillsNode(section, bodySize, lineHeight, justify) {
+            const container = document.createElement('div');
+            container.dataset.role = 'section-body';
+            container.dataset.sectionKind = 'skills';
+
+            if (section.contentHtml) {
+                container.innerHTML = section.contentHtml;
+            } else {
+                parseSkills(section.content).forEach((entry) => {
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'resume-entry';
+                    wrapper.innerHTML = `
+                        <div>
+                            <strong class="resume-editable" contenteditable="true" data-role="skill-label">${entry.label}</strong>:
+                            <span class="resume-editable" contenteditable="true" data-role="skill-content">${entry.content}</span>
+                        </div>
+                    `;
+                    container.appendChild(wrapper);
+                });
+            }
+
+            container.querySelectorAll('.resume-entry').forEach((wrapper) => {
+                wrapper.style.fontSize = `${bodySize}px`;
+                wrapper.style.lineHeight = lineHeight;
+                if (justify) {
+                    wrapper.style.textAlign = 'justify';
+                    wrapper.style.textJustify = 'inter-ideograph';
+                } else {
+                    wrapper.style.textAlign = '';
+                    wrapper.style.textJustify = '';
+                }
+            });
+
+            return container;
+        }
+
+        function createEducationNode(section, bodySize, lineHeight) {
+            const table = document.createElement('table');
+            table.className = 'resume-edu-table';
+            table.dataset.role = 'section-body';
+            table.dataset.sectionKind = 'education';
+            table.innerHTML = `
+                <colgroup>
+                    <col style="width:17%">
+                    <col style="width:16%">
+                    <col style="width:17%">
+                    <col style="width:8%">
+                    <col style="width:17%">
+                    <col style="width:25%">
+                </colgroup>
+                <tbody></tbody>
+            `;
+
+            const tbody = table.querySelector('tbody');
+            if (section.contentHtml) {
+                tbody.innerHTML = section.contentHtml;
+            } else {
+                parseEducation(section.content).forEach((row, rowIndex) => {
+                    const tr = document.createElement('tr');
+                    const isWideRow = row.slice(1).every((cell) => !cell);
+
+                    if (isWideRow) {
+                        const td = document.createElement('td');
+                        td.textContent = row[0];
+                        td.colSpan = 6;
+                        td.classList.add('resume-editable', 'edu-wide');
+                        td.contentEditable = 'true';
+                        td.dataset.rowIndex = String(rowIndex);
+                        td.dataset.colIndex = '0';
+                        td.style.fontWeight = '700';
+                        tr.appendChild(td);
+                    } else {
+                        row.forEach((cell, index) => {
+                            const td = document.createElement('td');
+                            td.textContent = cell;
+                            td.classList.add('resume-editable', 'edu-compact');
+                            td.contentEditable = 'true';
+                            td.dataset.rowIndex = String(rowIndex);
+                            td.dataset.colIndex = String(index);
+                            if (index === 0) td.style.fontWeight = '700';
+                            tr.appendChild(td);
+                        });
+                    }
+
+                    tbody.appendChild(tr);
+                });
+            }
+
+            table.querySelectorAll('td').forEach((td) => {
+                td.style.fontSize = `${bodySize}px`;
+                td.style.lineHeight = lineHeight;
+                if (td.dataset.colIndex === '0') td.style.fontWeight = '700';
+            });
+
+            return table;
+        }
+
+        function renderResumeSections() {
+            const bodySize = Number(els.bodySize.value);
+            const lineHeight = Number(els.lineHeight.value);
+            const justify = els.justifyToggle.checked;
+
+            els.resumeSections.innerHTML = '';
+            sectionsState.forEach((section) => {
+                const sectionNode = document.createElement('section');
+                sectionNode.className = 'resume-section';
+                sectionNode.dataset.sectionId = section.id;
+
+                const title = document.createElement('div');
+                title.className = 'resume-section-title resume-editable';
+                title.contentEditable = 'true';
+                title.dataset.role = 'section-title';
+                title.innerHTML = section.titleHtml || section.title || '未命名部分';
+
+                const rule = document.createElement('div');
+                rule.className = 'resume-rule';
+
+                sectionNode.appendChild(title);
+                sectionNode.appendChild(rule);
+
+                if (section.kind === 'education') {
+                    sectionNode.appendChild(createEducationNode(section, bodySize, lineHeight));
+                } else if (section.kind === 'skills') {
+                    sectionNode.appendChild(createSkillsNode(section, bodySize, lineHeight, justify));
+                } else {
+                    sectionNode.appendChild(createEntriesNode(section, bodySize, lineHeight, justify));
+                }
+
+                els.resumeSections.appendChild(sectionNode);
+            });
+        }
+
+        function renderSectionTabs() {
+            els.dynamicPanelTabs.innerHTML = '';
+            sectionsState.forEach((section) => {
+                const button = document.createElement('button');
+                button.className = 'panel-switcher-btn';
+                button.dataset.panelTarget = `section:${section.id}`;
+                button.textContent = section.title || '未命名部分';
+                button.addEventListener('click', () => setActiveEditorPanel(`section:${section.id}`));
+                els.dynamicPanelTabs.appendChild(button);
+            });
+        }
+
+        function renderSectionPanels() {
+            els.dynamicSectionPanels.innerHTML = '';
+
+            sectionsState.forEach((section) => {
+                const panel = document.createElement('div');
+                panel.className = 'control-card editor-panel';
+                panel.dataset.editorPanel = `section:${section.id}`;
+                panel.innerHTML = `
+                    <div class="flex items-center justify-between gap-3">
+                        <h3 class="subheading mb-0">部分设置</h3>
+                        <button class="action-btn" data-delete-section="${section.id}">删除部分</button>
+                    </div>
+                    <div class="space-y-3 mt-3">
+                        <div>
+                            <label class="field-label">部分名称</label>
+                            <input class="field-input" type="text" data-section-title-input="${section.id}">
+                        </div>
+                        <div>
+                            <label class="field-label">内容类型</label>
+                            <select class="field-select" data-section-kind-input="${section.id}">
+                                <option value="entries">经历列表</option>
+                                <option value="education">教育表格</option>
+                                <option value="skills">技能列表</option>
+                            </select>
+                        </div>
+                        <p class="muted-note" data-section-help="${section.id}"></p>
+                        <textarea data-section-input="${section.id}"></textarea>
+                    </div>
+                `;
+                els.dynamicSectionPanels.appendChild(panel);
+            });
+
+            sectionsState.forEach((section) => {
+                const titleInput = els.dynamicSectionPanels.querySelector(`[data-section-title-input="${section.id}"]`);
+                const kindInput = els.dynamicSectionPanels.querySelector(`[data-section-kind-input="${section.id}"]`);
+                const contentInput = els.dynamicSectionPanels.querySelector(`[data-section-input="${section.id}"]`);
+                const helpText = els.dynamicSectionPanels.querySelector(`[data-section-help="${section.id}"]`);
+                const deleteBtn = els.dynamicSectionPanels.querySelector(`[data-delete-section="${section.id}"]`);
+
+                titleInput.value = section.title;
+                kindInput.value = section.kind;
+                helpText.textContent = getSectionHelpText(section.kind);
+                contentInput.className = getSectionTextareaClass(section.kind);
+                contentInput.value = section.content;
+
+                titleInput.addEventListener('input', () => {
+                    section.title = titleInput.value;
+                    section.titleHtml = '';
+                    renderSectionTabs();
+                    const titleNode = getSectionTitleNode(section.id);
+                    if (titleNode) titleNode.textContent = section.title || '未命名部分';
+                    setActiveEditorPanel(activeEditorPanel);
+                    scheduleAutosave();
+                });
+
+                kindInput.addEventListener('change', () => {
+                    section.kind = kindInput.value;
+                    section.contentHtml = '';
+                    renderSectionPanels();
+                    renderSectionTabs();
+                    renderResumePreview();
+                    setActiveEditorPanel(`section:${section.id}`);
+                    scheduleAutosave();
+                });
+
+                contentInput.addEventListener('input', () => {
+                    section.content = contentInput.value;
+                    section.contentHtml = '';
+                    renderResumePreview();
+                    scheduleAutosave();
+                });
+
+                deleteBtn.addEventListener('click', () => {
+                    if (!window.confirm(`确认删除“${section.title || '未命名部分'}”？`)) {
+                        return;
+                    }
+                    sectionsState = sectionsState.filter((item) => item.id !== section.id);
+                    if (!sectionsState.length) {
+                        sectionsState.push(createNewSection('entries', '新部分'));
+                    }
+                    if (activeEditorPanel === `section:${section.id}`) {
+                        activeEditorPanel = `section:${sectionsState[0].id}`;
+                    }
+                    renderUISections();
+                    renderResumePreview();
+                    scheduleAutosave();
+                });
+            });
+        }
+
+        function renderUISections() {
+            renderSectionTabs();
+            renderSectionPanels();
+            setActiveEditorPanel(activeEditorPanel);
+        }
+
+        function renderTypography() {
+            const nameSize = Number(els.nameSize.value);
+            const metaSize = Number(els.metaSize.value);
+            const sectionTitleSize = Number(els.sectionTitleSize.value);
+            const lineHeight = Number(els.lineHeight.value);
+            const sectionGap = Number(els.sectionGap.value);
+            const topSectionGap = Number(els.topSectionGap.value);
+
+            els.previewName.style.fontSize = `${nameSize}px`;
+            [els.previewContact1, els.previewContact2, els.previewSummary].forEach((el) => {
+                el.style.fontSize = `${metaSize}px`;
+                el.style.lineHeight = lineHeight;
+            });
+            const sectionNodes = Array.from(els.resumeSections.querySelectorAll('.resume-section'));
+            sectionNodes.forEach((sectionNode, index) => {
+                sectionNode.style.marginTop = `${index === 0 ? topSectionGap : sectionGap}px`;
+            });
+            els.resumeSections.querySelectorAll('.resume-section-title').forEach((el) => {
+                el.style.fontSize = `${sectionTitleSize}px`;
+            });
+        }
+
+        function renderResumePreview() {
+            setEditableContent(els.previewName, els.nameInput.value.trim(), 'name');
+            setEditableContent(els.previewContact1, els.contactLine1Input.value.trim(), 'contactLine1');
+            setEditableContent(els.previewContact2, els.contactLine2Input.value.trim(), 'contactLine2');
+            setEditableContent(els.previewSummary, els.summaryInput.value.trim(), 'summary');
+            renderPhoto();
+            renderResumeSections();
+            renderTypography();
+            bindPreviewEditing();
+        }
+
+        function fullRender() {
+            renderUISections();
+            renderResumePreview();
+        }
+
+        function syncTopFieldFromPreview(event, shouldAutosave = true) {
+            const inputId = event.currentTarget.dataset.bindInput;
+            if (!inputId || !els[inputId]) return;
+            els[inputId].value = event.currentTarget.innerText.replace(/\n+/g, ' ').trim();
+            const richKey = event.currentTarget.dataset.richKey;
+            if (richKey) {
+                topRichState[richKey] = event.currentTarget.innerHTML;
+            }
+            if (shouldAutosave) scheduleAutosave();
+        }
+
+        function syncSectionTitleFromPreview(sectionId, shouldAutosave = true) {
+            const section = getSectionById(sectionId);
+            const titleNode = getSectionTitleNode(sectionId);
+            if (!section || !titleNode) return;
+            section.title = titleNode.innerText.replace(/\n+/g, ' ').trim();
+            section.titleHtml = titleNode.innerHTML;
+            renderSectionTabs();
+            setActiveEditorPanel(activeEditorPanel);
+            const titleInput = getSectionPanelTitleInput(sectionId);
+            if (titleInput) titleInput.value = section.title;
+            if (shouldAutosave) scheduleAutosave();
+        }
+
+        function syncEducationSectionFromPreview(sectionId, shouldAutosave = true) {
+            const section = getSectionById(sectionId);
+            const bodyNode = getSectionBodyNode(sectionId);
+            if (!section || !bodyNode) return;
+            const rows = Array.from(bodyNode.querySelectorAll('tr')).map((tr) => {
+                const tds = Array.from(tr.querySelectorAll('td'));
+                if (tds.length === 1 && Number(tds[0].colSpan) === 6) {
+                    return `${tds[0].innerText.replace(/\n+/g, ' ').trim()} |  |  |  |  | `;
+                }
+                const cells = tds.map((td) => td.innerText.replace(/\n+/g, ' ').trim());
+                while (cells.length < 6) cells.push('');
+                return cells.slice(0, 6).join(' | ');
+            });
+            section.content = rows.join('\n');
+            section.contentHtml = bodyNode.querySelector('tbody')?.innerHTML || '';
+            const panelInput = getSectionPanelInput(sectionId);
+            if (panelInput) panelInput.value = section.content;
+            if (shouldAutosave) scheduleAutosave();
+        }
+
+        function syncEntriesSectionFromPreview(sectionId, shouldAutosave = true) {
+            const section = getSectionById(sectionId);
+            const bodyNode = getSectionBodyNode(sectionId);
+            if (!section || !bodyNode) return;
+            const blocks = Array.from(bodyNode.querySelectorAll('.resume-entry')).map((entry) => {
+                const title = entry.querySelector('[data-role="entry-title"]')?.innerText.replace(/\n+/g, ' ').trim() || '';
+                const subtitle = entry.querySelector('[data-role="entry-subtitle"]')?.innerText.replace(/\n+/g, ' ').trim() || '';
+                const date = entry.querySelector('[data-role="entry-date"]')?.innerText.replace(/\n+/g, ' ').trim() || '';
+                const bullets = Array.from(entry.querySelectorAll('[data-role="entry-bullet"]'))
+                    .map((li) => li.innerText.replace(/\n+/g, ' ').trim())
+                    .filter(Boolean);
+                const lines = [[title, subtitle, date].join(' | ').trim(), ...bullets].filter(Boolean);
+                return lines.join('\n');
+            }).filter(Boolean);
+            section.content = blocks.join('\n\n');
+            section.contentHtml = bodyNode.innerHTML;
+            const panelInput = getSectionPanelInput(sectionId);
+            if (panelInput) panelInput.value = section.content;
+            if (shouldAutosave) scheduleAutosave();
+        }
+
+        function syncSkillsSectionFromPreview(sectionId, shouldAutosave = true) {
+            const section = getSectionById(sectionId);
+            const bodyNode = getSectionBodyNode(sectionId);
+            if (!section || !bodyNode) return;
+            const lines = Array.from(bodyNode.querySelectorAll('.resume-entry')).map((entry) => {
+                const label = entry.querySelector('[data-role="skill-label"]')?.innerText.replace(/\n+/g, ' ').trim() || '';
+                const content = entry.querySelector('[data-role="skill-content"]')?.innerText.replace(/\n+/g, ' ').trim() || '';
+                return [label, content].join(' | ').trim();
+            }).filter(Boolean);
+            section.content = lines.join('\n');
+            section.contentHtml = bodyNode.innerHTML;
+            const panelInput = getSectionPanelInput(sectionId);
+            if (panelInput) panelInput.value = section.content;
+            if (shouldAutosave) scheduleAutosave();
+        }
+
+        function syncAllPreviewState() {
+            [els.previewName, els.previewContact1, els.previewContact2, els.previewSummary].forEach((el) => {
+                syncTopFieldFromPreview({ currentTarget: el }, false);
+            });
+            sectionsState.forEach((section) => {
+                syncSectionTitleFromPreview(section.id, false);
+                if (section.kind === 'education') {
+                    syncEducationSectionFromPreview(section.id, false);
+                } else if (section.kind === 'skills') {
+                    syncSkillsSectionFromPreview(section.id, false);
+                } else {
+                    syncEntriesSectionFromPreview(section.id, false);
+                }
+            });
+            scheduleAutosave();
+        }
+
+        function bindPreviewEditing() {
+            [els.previewName, els.previewContact1, els.previewContact2, els.previewSummary].forEach((el) => {
+                el.oninput = (event) => syncTopFieldFromPreview(event, true);
+                el.onblur = (event) => syncTopFieldFromPreview(event, true);
+            });
+
+            sectionsState.forEach((section) => {
+                const titleNode = getSectionTitleNode(section.id);
+                if (titleNode) {
+                    titleNode.oninput = () => syncSectionTitleFromPreview(section.id, true);
+                    titleNode.onblur = () => syncSectionTitleFromPreview(section.id, true);
+                }
+
+                const bodyNode = getSectionBodyNode(section.id);
+                if (!bodyNode) return;
+
+                if (section.kind === 'education') {
+                    bodyNode.querySelectorAll('td').forEach((td) => {
+                        td.oninput = () => syncEducationSectionFromPreview(section.id, true);
+                        td.onblur = () => syncEducationSectionFromPreview(section.id, true);
+                    });
+                } else if (section.kind === 'skills') {
+                    bodyNode.querySelectorAll('.resume-editable').forEach((node) => {
+                        node.oninput = () => syncSkillsSectionFromPreview(section.id, true);
+                        node.onblur = () => syncSkillsSectionFromPreview(section.id, true);
+                    });
+                } else {
+                    bodyNode.querySelectorAll('.resume-editable').forEach((node) => {
+                        node.oninput = () => syncEntriesSectionFromPreview(section.id, true);
+                        node.onblur = () => syncEntriesSectionFromPreview(section.id, true);
+                    });
+                }
+            });
+        }
+
+        function selectionInsideResume() {
+            const selection = window.getSelection();
+            if (!selection || selection.rangeCount === 0) return false;
+            const node = selection.anchorNode;
+            return !!node && els.resumePaper.contains(node);
+        }
+
+        function applyFormat(command) {
+            if (!selectionInsideResume()) return;
+            document.execCommand(command, false);
+            syncAllPreviewState();
+        }
+
+        function buildPrintClone() {
+            const clone = els.resumePaper.cloneNode(true);
+            clone.querySelectorAll('[contenteditable]').forEach((node) => {
+                node.removeAttribute('contenteditable');
+            });
+            clone.querySelectorAll('[id]').forEach((node) => {
+                node.removeAttribute('id');
+            });
+            clone.querySelectorAll('[data-bind-input], [data-rich-key], [data-role], [data-section-id], [data-section-kind], [data-row-index], [data-col-index]').forEach((node) => {
+                node.removeAttribute('data-bind-input');
+                node.removeAttribute('data-rich-key');
+                node.removeAttribute('data-role');
+                node.removeAttribute('data-section-id');
+                node.removeAttribute('data-section-kind');
+                node.removeAttribute('data-row-index');
+                node.removeAttribute('data-col-index');
+            });
+            return clone;
+        }
+
+        function cleanupPrintMode() {
+            document.body.classList.remove('print-mode');
+            els.printCloneHost.innerHTML = '';
+        }
+
+        function printResume() {
+            els.printCloneHost.innerHTML = '';
+            els.printCloneHost.appendChild(buildPrintClone());
+            document.body.classList.add('print-mode');
+
+            window.setTimeout(() => {
+                window.print();
+            }, 80);
+        }
+
+        function addNewSection() {
+            const title = window.prompt('请输入新部分名称', '新部分');
+            const normalizedTitle = (title || '').trim();
+            if (!normalizedTitle) {
+                setStorageStatus('已取消新增部分。');
+                return;
+            }
+
+            const kindPrompt = (window.prompt('请输入新部分类型：entries（经历列表） / education（教育表格） / skills（技能列表）', 'entries') || '').trim().toLowerCase();
+            const kind = ['entries', 'education', 'skills'].includes(kindPrompt) ? kindPrompt : 'entries';
+            const section = createNewSection(kind, normalizedTitle);
+            sectionsState.push(section);
+            activeEditorPanel = `section:${section.id}`;
+            renderUISections();
+            renderResumePreview();
+            scheduleAutosave();
+        }
+
+        [
+            els.nameSize,
+            els.metaSize,
+            els.sectionTitleSize,
+            els.bodySize,
+            els.lineHeight,
+            els.sectionGap,
+            els.topSectionGap,
+            els.justifyToggle
+        ].forEach((el) => {
+            const eventName = el.type === 'checkbox' ? 'change' : 'input';
+            el.addEventListener(eventName, () => {
+                renderResumePreview();
+                scheduleAutosave();
+            });
+            if (eventName !== 'change') {
+                el.addEventListener('change', () => {
+                    renderResumePreview();
+                    scheduleAutosave();
+                });
+            }
+        });
+
+        [
+            [els.nameInput, 'name'],
+            [els.contactLine1Input, 'contactLine1'],
+            [els.contactLine2Input, 'contactLine2'],
+            [els.summaryInput, 'summary']
+        ].forEach(([el, richKey]) => {
+            el.addEventListener('input', () => {
+                delete topRichState[richKey];
+                renderResumePreview();
+                scheduleAutosave();
+            });
+            el.addEventListener('change', () => {
+                delete topRichState[richKey];
+                renderResumePreview();
+                scheduleAutosave();
+            });
+        });
+
+        els.photoInput.addEventListener('click', () => {
+            els.photoInput.value = '';
+        });
+
+        els.photoInput.addEventListener('change', (event) => {
+            const file = event.target.files?.[0];
+            if (!file) {
+                photoDataUrl = '';
+                renderResumePreview();
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = () => {
+                photoDataUrl = String(reader.result || '');
+                renderResumePreview();
+                scheduleAutosave();
+            };
+            reader.readAsDataURL(file);
+        });
+
+        els.addSectionBtn.addEventListener('click', addNewSection);
+        els.printBtn.addEventListener('click', printResume);
+        els.topCollapseBtn.addEventListener('click', () => {
+            const collapsed = !els.topControlsBody.hidden;
+            setTopPanelCollapsed(collapsed);
+        });
+        window.addEventListener('afterprint', cleanupPrintMode);
+
+        els.saveBtn.addEventListener('click', () => saveDraft({ silent: false }));
+        els.resetBtn.addEventListener('click', () => {
+            if (!window.confirm('确认恢复默认内容吗？这会覆盖当前草稿，但不会删除已保存预设。')) {
+                setStorageStatus('已取消恢复默认。');
+                return;
+            }
+            applyDefaults();
+            saveDraft({ silent: true });
+            setStorageStatus('已恢复默认内容，并覆盖当前草稿。');
+        });
+        els.savePresetBtn.addEventListener('click', saveCurrentAsPreset);
+        els.deletePresetBtn.addEventListener('click', deleteSelectedPreset);
+        els.exportJsonBtn.addEventListener('click', exportStorageJson);
+        els.importJsonBtn.addEventListener('click', () => els.importJsonInput.click());
+        els.importJsonInput.addEventListener('change', importStorageJson);
+        els.presetSelect.addEventListener('change', () => {
+            if (els.presetSelect.value) {
+                loadSelectedPreset();
+            } else {
+                storageData.activePreset = '';
+                persistStorage();
+                refreshPresetSelect();
+                setStorageStatus('已取消当前预设选择。');
+            }
+        });
+
+        document.querySelector('[data-panel-target="profile"]').addEventListener('click', () => setActiveEditorPanel('profile'));
+
+        window.addEventListener('keydown', (event) => {
+            const withMeta = event.metaKey || event.ctrlKey;
+            if (!withMeta) return;
+
+            const key = event.key.toLowerCase();
+            if (key === 's' && event.shiftKey) {
+                event.preventDefault();
+                saveCurrentAsPreset();
+                return;
+            }
+            if (key === 's') {
+                event.preventDefault();
+                saveDraft({ silent: false });
+                return;
+            }
+            if (key === 'p') {
+                event.preventDefault();
+                printResume();
+                return;
+            }
+            if (key === 'o' && event.shiftKey) {
+                event.preventDefault();
+                els.importJsonInput.click();
+            }
+        });
+
+        window.addEventListener('beforeunload', () => {
+            if (autosaveTimer) {
+                window.clearTimeout(autosaveTimer);
+                saveDraft({ silent: true });
+            }
+        });
+
+        document.querySelectorAll('.format-btn').forEach((button) => {
+            button.addEventListener('click', () => applyFormat(button.dataset.command));
+        });
+
+        restoreTopPanelState();
+
+        if (!loadInitialState()) {
+            applyDefaults();
+        } else {
+            restoreActiveEditorPanel();
+        }
+    </script>
+</body>
+</html>
